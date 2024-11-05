@@ -1,6 +1,9 @@
 # Analysis of A/B Test for Fast Food Marketing Campaign
-## [find sql and result here](https://docs.google.com/spreadsheets/d/1uvGZet4UKoODFTBBeFhMO988NaH1tp5df9dq6WmXSqg/edit?usp=sharing)
-## [find jupyter notebook here](https://colab.research.google.com/drive/1oW2ef_GnsqHIMvwxBDBcyZDKsEV4I3OA?usp=sharing)
+
+## Data Source
+
+- Find SQL and results [here](https://docs.google.com/spreadsheets/d/1uvGZet4UKoODFTBBeFhMO988NaH1tp5df9dq6WmXSqg/edit?usp=sharing).
+- Find Jupyter Notebook [here](https://colab.research.google.com/drive/1oW2ef_GnsqHIMvwxBDBcyZDKsEV4I3OA?usp=sharing).
 
 ## Data Aggregation
 The provided sql was used top get the needed column for analysis
@@ -38,43 +41,74 @@ The resulting DataFrame `df` contains the data from the provided text.
 
 To analyze the impact of the different promotional strategies on the average weekly sales, we will perform an ANOVA (Analysis of Variance) test and Tukey's HSD (Honestly Significant Difference) test.
 
-### ANOVA Test
+### T-Test
+The T-test checks for statistically significant differences in average weekly sales across the different promotional strategies.
 
-The ANOVA test will determine if there is a statistically significant difference in the average weekly sales among the different promotional strategies.
+### Hypotheses
+Null Hypothesis 
 
-$$$ F = \frac{MST}{MSE} $$$ 
+​
+ : There is no significant difference in average weekly sales among the promotional strategies.
+Alternative Hypothesis 
 
-where:
-- $MST$ is the mean square for the treatment (promotional strategies)
-- $MSE$ is the mean square for the error (within-group variation)
-
-The null hypothesis ($H_0$) is that there is no significant difference in the average weekly sales among the promotional strategies, while the alternative hypothesis ($H_A$) is that there is at least one significant difference.
-
+​
+ : At least one strategy yields a significantly different average weekly sales.
+#### Python Implementation
 ```python
-import statsmodels.api as sm
-from statsmodels.formula.api import ols
+import scipy.stats as stats
 
-# Perform ANOVA
-model = ols('AvgWeeklySales ~ C(Promotion)', data=df).fit()
-anova_table = sm.stats.anova_lm(model, typ=2)
-print(anova_table)
+# T-tests between the promotions
+t_test_results = {}
+
+# T-test between Promotion 1 and Promotion 2
+t_stat_1_2, p_val_1_2 = stats.ttest_ind(df[df['Promotion'] == 1]['AvgWeeklySales'],
+                                         df[df['Promotion'] == 2]['AvgWeeklySales'])
+t_test_results['Promotion 1 vs. Promotion 2'] = (t_stat_1_2, p_val_1_2)
+
+# T-test between Promotion 1 and Promotion 3
+t_stat_1_3, p_val_1_3 = stats.ttest_ind(df[df['Promotion'] == 1]['AvgWeeklySales'],
+                                         df[df['Promotion'] == 3]['AvgWeeklySales'])
+t_test_results['Promotion 1 vs. Promotion 3'] = (t_stat_1_3, p_val_1_3)
+
+# T-test between Promotion 2 and Promotion 3
+t_stat_2_3, p_val_2_3 = stats.ttest_ind(df[df['Promotion'] == 2]['AvgWeeklySales'],
+                                         df[df['Promotion'] == 3]['AvgWeeklySales'])
+t_test_results['Promotion 2 vs. Promotion 3'] = (t_stat_2_3, p_val_2_3)
+
+for test, result in t_test_results.items():
+    print(f"T-Test between {test}:")
+    print(f"T-Statistic: {result[0]}")
+    print(f"P-Value: {result[1]}")
+
 ```
 
-The ANOVA results will provide the F-statistic and the corresponding p-value. If the p-value is less than the chosen significance level (e.g., 0.05), we can reject the null hypothesis and conclude that there is at least one significant difference in the average weekly sales among the promotional strategies.
+### Results
+The T-test results indicated:
+
+Promotion 1 vs. Promotion 2: Significant difference (p-value < 0.05).
+Promotion 1 vs. Promotion 3: No significant difference (p-value > 0.05).
+Promotion 2 vs. Promotion 3: Marginal difference (p-value < 0.05).
+
+### Observation on Statistical Significance
+T-Test: The significant p-value for the comparison between Promotion 1 and Promotion 2 suggests a genuine difference in performance.
 
 ### Tukey's HSD Test
 
-If the ANOVA test indicates a significant difference, we can use Tukey's HSD test to determine which specific pairs of promotional strategies have significantly different average weekly sales.
+Tukey's HSD test identifies specific pairs of promotional strategies that differ significantly in their average weekly sales.
 
-$$$ q = \frac{\bar{y}_i - \bar{y}_j}{s_p\sqrt{\frac{1}{n_i} + \frac{1}{n_j}}} $$$ 
+#### Formula
+$$$ q = \frac{\bar{y}_i - \bar{y}_j}{s_p \sqrt{\frac{1}{n_i} + \frac{1}{n_j}}} $$$
 
-where:
+Where:
 - $\bar{y}_i$ and $\bar{y}_j$ are the sample means for the two groups being compared
 - $s_p$ is the pooled standard deviation
 - $n_i$ and $n_j$ are the sample sizes for the two groups
 
-The null hypothesis ($H_0$) is that there is no significant difference between the two promotional strategies, while the alternative hypothesis ($H_A$) is that there is a significant difference.
+#### Hypotheses
+- **Null Hypothesis \(H_0\)**: There is no significant difference between the two promotional strategies.
+- **Alternative Hypothesis \(H_A\)**: There is a significant difference between the strategies.
 
+#### Python Implementation
 ```python
 from statsmodels.stats.multicomp import pairwise_tukeyhsd
 
@@ -83,24 +117,28 @@ tukey = pairwise_tukeyhsd(endog=df['AvgWeeklySales'], groups=df['Promotion'], al
 print(tukey)
 ```
 
-The Tukey's HSD test results will provide the mean difference, the 95% confidence interval, and the adjusted p-value for each pair of promotional strategies. If the adjusted p-value is less than the chosen significance level (e.g., 0.05), we can conclude that the two promotional strategies have significantly different average weekly sales.
+### Results
+Tukey's HSD test results revealed:
+- **Promotion 1 vs. Promotion 2**: Significant difference (p-adj = 0.004). Promotion 1 had higher average weekly sales.
+- **Promotion 1 vs. Promotion 3**: No significant difference (p-adj = 0.6862).
+- **Promotion 2 vs. Promotion 3**: Marginal difference, but not convincingly significant (p-adj = 0.0371), with the confidence interval including zero.
+
+### Observation on Statistical Significance
+- **T-Test**: The significant p-value of 0.0037 suggests that the variation in average weekly sales among the promotional strategies is unlikely due to random chance.
+- **Tukey's HSD Test**: Adjusted p-values indicate that only the difference between Promotion 1 and Promotion 2 is robustly significant (p-adj = 0.004), implying a genuine difference in performance.
 
 ## Results and Recommendations
 
-Based on the ANOVA and Tukey's HSD test results, we can summarize the findings and provide recommendations for the Fast Food Marketing Campaign.
+### Summary of Findings
+- The T-Test confirms that not all promotional strategies yield the same average weekly sales.
+- Tukey's HSD test results indicate:
+  - **Promotion 1 vs. Promotion 2**: Promotion 1 is significantly better.
+  - **Promotion 1 vs. Promotion 3**: No significant difference.
+  - **Promotion 2 vs. Promotion 3**: Only marginal evidence of a difference.
 
-1. ANOVA Test Results:
-   - The ANOVA test showed a statistically significant difference in the average weekly sales among the different promotional strategies (p-value < 0.05).
+### Recommendations
+- **Implement Promotion 1** broadly to maximize sales, as it significantly outperforms Promotion 2.
+- **Consider replacing Promotion 2** with either Promotion 1 or 3 to enhance sales outcomes, given that Promotion 2 underperforms.
+- Ongoing monitoring and analysis are recommended to fine-tune the promotional strategy based on evolving data.
 
-2. Tukey's HSD Test Results:
-   - The Tukey's HSD test revealed the following significant differences:
-     - Promotion 1 had significantly higher average weekly sales compared to Promotion 2 and Promotion 3.
-     - Promotion 2 had significantly lower average weekly sales compared to Promotion 1 and Promotion 3.
-
-3. Recommendations:
-   - Based on the results, the most effective promotional strategy appears to be Promotion 1, which resulted in the highest average weekly sales.
-   - The company should consider implementing Promotion 1 across all locations to maximize the impact of the marketing campaign.
-   - For locations currently using Promotion 2, the company should consider transitioning to Promotion 1 or Promotion 3, as Promotion 2 was found to be significantly less effective.
-   - The company should continue to monitor the performance of the different promotional strategies and consider adjusting the campaign based on ongoing data analysis.
-
-In summary, the statistical analysis indicates that Promotion 1 is the most effective strategy for the Fast Food Marketing Campaign, and the company should focus on implementing this approach across all locations to maximize the impact on average weekly sales.
+This concludes the analysis of the A/B test for the fast food marketing campaign. For further details, please refer to the SQL results and Jupyter Notebook linked above.
