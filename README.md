@@ -3,7 +3,7 @@
 ## Data Source
 
 - Find SQL and results [here](https://docs.google.com/spreadsheets/d/1uvGZet4UKoODFTBBeFhMO988NaH1tp5df9dq6WmXSqg/edit?usp=sharing).
-- Find Jupyter Notebook [here](https://colab.research.google.com/drive/1oW2ef_GnsqHIMvwxBDBcyZDKsEV4I3OA?usp=sharing).
+- Find Jupyter Notebook [here](https://colab.research.google.com/drive/1BirtazA5rQhrT_nveezEfH38ksO1Yeaz?usp=sharing).
 
 ## Data Aggregation
 The provided sql was used top get the needed column for analysis
